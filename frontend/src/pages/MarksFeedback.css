@@ -1,0 +1,48 @@
+.marks-page {
+  display: grid;
+}
+
+.marks-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 28px;
+  border: 1px solid rgba(210, 223, 241, 0.9);
+  padding: 28px;
+  box-shadow:
+    0 20px 50px rgba(16, 41, 84, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.marks-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.marks-summary div {
+  background: linear-gradient(180deg, #fbfdff 0%, #eef4fd 100%);
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid #d9e5f5;
+}
+
+.marks-summary span {
+  display: block;
+  font-size: 0.84rem;
+  color: #6f7d95;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.marks-summary strong {
+  color: #12233d;
+  line-height: 1.5;
+}
+
+.marks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}

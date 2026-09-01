@@ -1,0 +1,26 @@
+.report-page {
+    min-height: 100vh;
+    background: #f4f6fb;
+    padding: 40px;
+  }
+  
+  .report-card {
+    background: white;
+    padding: 30px;
+    border-radius: 18px;
+    max-width: 1100px;
+    margin: auto;
+  }
+  
+  table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+  }
+  
+  th,
+  td {
+    border: 1px solid #ddd;
+    padding: 16px;
+    text-align: center;
+  }

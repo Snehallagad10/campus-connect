@@ -1,0 +1,80 @@
+[
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "practical",
+    "remarks": "Assignment -2",
+    "grade": "B",
+    "feedback": "",
+    "checkedDate": "2026-04-10T06:47:52.053Z",
+    "appointmentId": "e10a390a-f59d-4fa3-9064-ab65b5434fef",
+    "_id": "38cb97ad-62be-4024-ae39-8b088c1e97b0",
+    "createdAt": "2026-04-10T06:47:52.054Z",
+    "updatedAt": "2026-04-10T06:47:52.054Z"
+  },
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "assignment",
+    "remarks": "ASSIGNMENT -3",
+    "grade": "B",
+    "feedback": "",
+    "checkedDate": "2026-04-10T08:18:20.662Z",
+    "appointmentId": "43f1b299-bc81-4265-9787-7244d2ca470e",
+    "_id": "0d763b3d-8236-4337-a627-32c4cba42a52",
+    "createdAt": "2026-04-10T08:18:20.662Z",
+    "updatedAt": "2026-04-10T08:18:20.662Z"
+  },
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "assignment",
+    "remarks": "assginment-4",
+    "grade": "c",
+    "feedback": "",
+    "checkedDate": "2026-04-10T08:22:45.138Z",
+    "appointmentId": "ad7894de-c52d-44bd-88a7-326aa6cd0f60",
+    "_id": "aa8fa443-289b-4dc0-822f-afe12057d84c",
+    "createdAt": "2026-04-10T08:22:45.138Z",
+    "updatedAt": "2026-04-10T08:22:45.138Z"
+  },
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "assignment",
+    "remarks": "assignment-3",
+    "grade": "A",
+    "feedback": "",
+    "checkedDate": "2026-04-10T08:23:42.735Z",
+    "appointmentId": "70e8048c-84b0-4375-a600-6514e8e8771d",
+    "_id": "9f587a38-6e36-4fcc-a801-fe10d5f788b8",
+    "createdAt": "2026-04-10T08:23:42.735Z",
+    "updatedAt": "2026-04-10T08:23:42.735Z"
+  },
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "assignment",
+    "remarks": "assignment-4",
+    "grade": "A",
+    "feedback": "",
+    "checkedDate": "2026-04-10T08:53:56.297Z",
+    "appointmentId": "b370f640-2f19-4b3a-8cd7-c899786f3902",
+    "_id": "2ad8a175-2a50-4871-ab29-0f654ade5e22",
+    "createdAt": "2026-04-10T08:53:56.297Z",
+    "updatedAt": "2026-04-10T08:53:56.297Z"
+  },
+  {
+    "studentName": "Priyanka ",
+    "classDiv": "TE / A",
+    "reason": "assignment",
+    "remarks": "assignmet-2",
+    "grade": "B",
+    "feedback": "",
+    "checkedDate": "2026-04-10T08:57:34.282Z",
+    "appointmentId": "cb162a3f-dad9-4e00-8409-dacd3d23f640",
+    "_id": "ef69e446-3b4a-4ffa-9df8-f5006afb68eb",
+    "createdAt": "2026-04-10T08:57:34.282Z",
+    "updatedAt": "2026-04-10T08:57:34.282Z"
+  }
+]

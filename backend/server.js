@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const PRODUCTION_FRONTEND_ORIGIN =
   "https://campus-connect-gamma-taupe.vercel.app";
-const PREVIEW_FRONTEND_HOST = /^campus-connect(?:-[a-z0-9-]+)?\\.vercel\\.app$/i;
+const PREVIEW_FRONTEND_HOST = /^campus-connect(?:-[a-z0-9-]+)?\.vercel\.app$/i;
 
 const allowedFrontendOrigins = (process.env.FRONTEND_URL || "")
   .split(",")

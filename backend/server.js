@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const PRODUCTION_FRONTEND_ORIGIN =
   "https://campus-connect-gamma-taupe.vercel.app";
-const PREVIEW_FRONTEND_HOST = /^campus-connect(?:-[a-z0-9-]+)?\.vercel\.app$/i;
+const PREVIEW_FRONTEND_HOST = /^campus-connect(?:-[a-z0-9-]+)?\\.vercel\\.app$/i;
 
 const allowedFrontendOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
@@ -49,17 +49,20 @@ const corsOptions = {
   preflightContinue: false,
 };
 
-// cors() responds to OPTIONS preflight requests before they reach the API routes.
+// CORS and health checks must work even while MongoDB is unavailable.
 app.use(cors(corsOptions));
-
 app.use(express.json());
 
-app.get("/", (_req, res) => {
-  res.json({
+const healthResponse = (_req, res) => {
+  res.status(200).json({
     message: "Teacher Slot Booking & Marks Management API",
     status: "running",
   });
-});
+};
+
+app.get("/", healthResponse);
+app.get("/health", healthResponse);
+app.get("/api/health", healthResponse);
 
 app.use(async (_req, res, next) => {
   try {
@@ -124,7 +127,6 @@ app.use((error, _req, res, _next) => {
     message: "Something went wrong on the server.",
   });
 });
-
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);

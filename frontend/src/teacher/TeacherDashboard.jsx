@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { appointmentApi, session, teacherApi } from "../api/api";
-import { formatCurrentIstTime, normalizeTimeInput } from "../utils/istTime";
+import { formatCurrentIstTime, isValidAvailabilitySlot, normalizeTimeInput } from "../utils/istTime";
+import TimePicker from "../components/TimePicker";
 
 function TeacherDashboard() {
   const navigate = useNavigate();
@@ -59,6 +60,12 @@ function TeacherDashboard() {
     }));
 
     if (type === "checkbox") {
+      if (newValue) {
+        setError("");
+        setMessage("Enter the time slot and save to make your availability live.");
+        return;
+      }
+
       setSaving(true);
       setMessage("");
       setError("");
@@ -88,6 +95,12 @@ function TeacherDashboard() {
 
   const saveAvailability = async (event) => {
     event.preventDefault();
+    if (availabilityForm.isAvailable && !isValidAvailabilitySlot(availabilityForm.startTime, availabilityForm.endTime)) {
+      setError("Enter valid From and To times. They must be different; overnight slots are supported.");
+      setMessage("");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     setError("");
@@ -124,7 +137,7 @@ function TeacherDashboard() {
       </div>
 
       <div className="dashboard-grid teacher-dashboard-grid">
-        <section className="card card--span-12 teacher-dashboard-card teacher-dashboard-card--availability">
+        <section id="availability" className="card card--span-12 teacher-dashboard-card teacher-dashboard-card--availability">
           <div className="page-header">
             <div>
               <h3>Set Live Availability</h3>
@@ -155,24 +168,22 @@ function TeacherDashboard() {
             {availabilityForm.isAvailable && (
               <div className="input-grid">
                 <div className="form-group">
-                  <label htmlFor="teacher-start">From Time</label>
-                  <input
-                    id="teacher-start"
-                    type="time"
-                    name="startTime"
+                  <label htmlFor="teacher-start-hour">From Time</label>
+                  <TimePicker
+                    idPrefix="teacher-start"
+                    label="From Time"
                     value={availabilityForm.startTime}
-                    onChange={handleAvailabilityChange}
+                    onChange={(value) => setAvailabilityForm((previous) => ({ ...previous, startTime: value }))}
                     required={availabilityForm.isAvailable}
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="teacher-end">To Time</label>
-                  <input
-                    id="teacher-end"
-                    type="time"
-                    name="endTime"
+                  <label htmlFor="teacher-end-hour">To Time</label>
+                  <TimePicker
+                    idPrefix="teacher-end"
+                    label="To Time"
                     value={availabilityForm.endTime}
-                    onChange={handleAvailabilityChange}
+                    onChange={(value) => setAvailabilityForm((previous) => ({ ...previous, endTime: value }))}
                     required={availabilityForm.isAvailable}
                   />
                 </div>

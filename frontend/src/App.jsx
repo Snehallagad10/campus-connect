@@ -44,6 +44,8 @@ function ProtectedLayout({ allowedRole, children }) {
       ? currentSession.user.name
       : currentSession.user.fullName;
 
+  const page = typeof children === "function" ? children({ onLogout: handleLogout }) : children;
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -51,7 +53,7 @@ function ProtectedLayout({ allowedRole, children }) {
         userName={userName}
         onLogout={handleLogout}
       />
-      <main className="app-content">{children}</main>
+      <main className="app-content">{page}</main>
     </div>
   );
 }
@@ -100,7 +102,7 @@ function App() {
           path="/teacher-profile"
           element={
             <ProtectedLayout allowedRole="teacher">
-              <TeacherProfile />
+              {({ onLogout }) => <TeacherProfile onLogout={onLogout} />}
             </ProtectedLayout>
           }
         />
@@ -134,7 +136,7 @@ function App() {
           path="/student-profile"
           element={
             <ProtectedLayout allowedRole="student">
-              <StudentProfile />
+              {({ onLogout }) => <StudentProfile onLogout={onLogout} />}
             </ProtectedLayout>
           }
         />

@@ -15,25 +15,19 @@ function parseRemarkColumn(remarks, reason = "") {
     const cleanRemark = normalizeText(remarks);
     const regex = /(assignment|practical|mini\s*project)[^\d]*(\d+)/i;
 
-    console.log("RAW:", cleanRemark);
-
     if (!cleanRemark) {
-      console.log("FAILED:", cleanRemark);
       return null;
     }
 
     const match = cleanRemark.match(regex);
 
     if (!match) {
-      console.log("FAILED:", cleanRemark);
       return {
         label: "General",
         number: Number.MAX_SAFE_INTEGER,
         type: "General",
       };
     }
-
-    console.log("MATCH:", match[0]);
 
     const type = match[1].toLowerCase().replace(/\s+/g, " ");
     const number = Number(match[2]);
@@ -230,22 +224,46 @@ function applyWorksheetFormatting(worksheet) {
 async function createMarksReportWorkbook(records) {
   const { columns, rows, skippedRemarks } = buildMarksPivot(records);
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Marks Report");
+  const detailWorksheet = workbook.addWorksheet("Report Details");
+  detailWorksheet.columns = [
+    { header: "Teacher", key: "teacherName" },
+    { header: "Subject", key: "subject" },
+    { header: "Student Name", key: "studentName" },
+    { header: "Class / Division", key: "classDiv" },
+    { header: "Assessment", key: "reason" },
+    { header: "Remark", key: "remarks" },
+    { header: "Grade", key: "grade" },
+    { header: "Feedback", key: "feedback" },
+    { header: "Checked Date", key: "checkedDate" },
+    { header: "Appointment ID", key: "appointmentId" },
+  ];
+  detailWorksheet.addRows(records.map((record) => ({
+    teacherName: record.teacherName || "",
+    subject: record.subject || "",
+    studentName: record.studentName || "",
+    classDiv: record.classDiv || "",
+    reason: record.reason || "",
+    remarks: record.remarks || "",
+    grade: getDisplayGrade(record),
+    feedback: record.feedback || "",
+    checkedDate: record.checkedDate ? new Date(record.checkedDate) : "",
+    appointmentId: record.appointmentId ? String(record.appointmentId) : "",
+  })));
+  detailWorksheet.getColumn("checkedDate").numFmt = "yyyy-mm-dd hh:mm";
+  applyWorksheetFormatting(detailWorksheet);
 
-  worksheet.columns = ["Name", ...columns].map((header) => ({
+  const summaryWorksheet = workbook.addWorksheet("Marks Summary");
+
+  summaryWorksheet.columns = ["Name", ...columns].map((header) => ({
     header,
     key: header,
   }));
 
   if (columns.length && rows.length) {
-    worksheet.addRows(rows);
-  } else {
-    worksheet.addRow({
-      Name: "No valid assignment data found",
-    });
+    summaryWorksheet.addRows(rows);
   }
 
-  applyWorksheetFormatting(worksheet);
+  applyWorksheetFormatting(summaryWorksheet);
 
   const buffer = await workbook.xlsx.writeBuffer();
 

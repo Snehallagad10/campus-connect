@@ -1,6 +1,6 @@
 import { session } from "../api/api";
 
-function StudentProfile() {
+function StudentProfile({ onLogout }) {
   const student = session.get()?.user;
   const studentName = student?.fullName || "Student";
   const initials = studentName
@@ -79,6 +79,12 @@ function StudentProfile() {
               <span>Portal Ready</span>
             </div>
           </aside>
+        </div>
+
+        <div className="profile-logout-row">
+          <button type="button" className="button-secondary profile-logout" onClick={onLogout}>
+            Logout
+          </button>
         </div>
       </section>
     </div>

@@ -1,12 +1,21 @@
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; }
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+html {
+  height: 100%;
 }
 
 :root {
   font-family: "Segoe UI", "Inter", sans-serif;
   color: #17304f;
-  background:
-    radial-gradient(circle at top, #f7fafe 0%, #eef3fb 42%, #e7eef8 100%);
+  background: radial-gradient(circle at top, #f7fafe 0%, #eef3fb 42%, #e7eef8 100%);
   line-height: 1.45;
   font-weight: 400;
   font-size: 15px;
@@ -17,14 +26,15 @@
 }
 
 body {
-  margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at top, #f7fafe 0%, #eef3fb 42%, #e7eef8 100%);
+  min-height: 100dvh;
+  padding: 0;
+  background: radial-gradient(circle at top, #f7fafe 0%, #eef3fb 42%, #e7eef8 100%);
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: transparent;
 }
 
 a {

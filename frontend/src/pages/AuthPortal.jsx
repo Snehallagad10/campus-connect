@@ -1,10 +1,16 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { session, studentApi, teacherApi } from "../api/api";
 import "./AuthPortal.css";
 
 function AuthPortal({ mode = "login", defaultRole = "student" }) {
   const navigate = useNavigate();
+  useLayoutEffect(() => {
+    const rootElement = document.documentElement;
+    rootElement.classList.add("auth-portal-active");
+    return () => rootElement.classList.remove("auth-portal-active");
+  }, []);
+
   const [role, setRole] = useState(defaultRole);
   const [form, setForm] = useState({
     email: "",
@@ -93,12 +99,9 @@ function AuthPortal({ mode = "login", defaultRole = "student" }) {
 
   return (
     <div className="portal-shell">
-      <div className="portal-bg-shape portal-bg-shape--top" />
-      <div className="portal-bg-shape portal-bg-shape--bottom" />
-
       <section className="portal-card">
         <div className="portal-card__header">
-          <span className="portal-card__eyebrow">TSBMS Academic Portal</span>
+          <span className="portal-card__eyebrow">Campus Connect</span>
           <h1>{title}</h1>
           <p>{subtitle}</p>
         </div>

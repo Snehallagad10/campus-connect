@@ -1,0 +1,59 @@
+.time-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid #cfdced;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgba(37, 48, 87, .03), 0 2px 5px rgba(22, 49, 86, .03);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.time-picker:focus-within {
+  border-color: #7fa7e7;
+  box-shadow: 0 0 0 4px rgba(86, 132, 214, .14);
+}
+
+.time-picker select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 25px 0 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  appearance: none;
+  background-color: #f7f9fd;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%236b7d97' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  color: #203653;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.time-picker select:focus {
+  outline: none;
+  border-color: #b7cbe7;
+  background-color: #fff;
+}
+
+.time-picker select:invalid {
+  color: #71809a;
+}
+
+.time-picker__separator {
+  color: #687a94;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+@media (max-width: 380px) {
+  .time-picker { gap: 4px; padding: 4px; }
+  .time-picker select { min-height: 44px; padding-left: 7px; padding-right: 20px; background-position: right 5px center; font-size: .92rem; }
+}

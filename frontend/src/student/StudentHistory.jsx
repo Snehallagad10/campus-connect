@@ -56,7 +56,32 @@ function StudentHistory() {
       {error ? <div className="alert alert--error">{error}</div> : null}
 
       <section className="card">
-        <div className="table-wrap">
+        <div className="history-mobile-list">
+          {appointments.map((appointment) => (
+            <article key={appointment._id} className="history-mobile-card">
+              <div className="history-mobile-card__top">
+                <div>
+                  <span className="history-mobile-card__label">Teacher</span>
+                  <strong>{appointment.teacherName || "--"}</strong>
+                </div>
+                <span className={appointment.status === "Completed" ? "status-pill status-pill--completed" : "status-pill status-pill--pending"}>
+                  {appointment.status || "Pending"}
+                </span>
+              </div>
+              <dl className="history-mobile-card__details">
+                <div><dt>Reason</dt><dd>{appointment.reason || "--"}</dd></div>
+                <div><dt>Class / Division</dt><dd>{appointment.classDiv || "--"}</dd></div>
+                <div><dt>Booked date</dt><dd>{appointment.date || "--"}</dd></div>
+                {(appointment.time || appointment.timeSlot || appointment.startTime) && (
+                  <div><dt>Time</dt><dd>{appointment.time || appointment.timeSlot || appointment.startTime}</dd></div>
+                )}
+              </dl>
+              {appointment.remarks && <p className="history-mobile-card__remark">{appointment.remarks}</p>}
+            </article>
+          ))}
+          {!appointments.length && <div className="empty-state">No appointments booked yet.</div>}
+        </div>
+        <div className="table-wrap history-desktop-table">
           <table className="erp-table">
             <thead>
               <tr>

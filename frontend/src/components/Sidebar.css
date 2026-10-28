@@ -21,71 +21,6 @@
   backdrop-filter: blur(24px);
 }
 
-.sidebar__brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 10px 4px;
-}
-
-.sidebar__brand-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #9fc6ff 0%, #4f88e8 100%);
-  color: #081a33;
-  font-weight: 800;
-  font-size: 1.05rem;
-  box-shadow: 0 14px 30px rgba(83, 119, 179, 0.22);
-}
-
-.sidebar__brand h1 {
-  margin: 5px 0;
-  font-size: 1.16rem;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  color: #10233f;
-}
-
-.sidebar__brand p,
-.sidebar__user p {
-  margin: 0;
-  color: #4d5f7c;
-  font-size: 0.88rem;
-  line-height: 1.55;
-}
-
-.sidebar__eyebrow {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #5d79a8;
-}
-
-.sidebar__user {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 20px;
-  padding: 14px;
-  backdrop-filter: blur(10px);
-}
-
-.sidebar__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  background: linear-gradient(135deg, #d5e6ff, #79abff);
-  color: #0a2446;
-}
-
 .sidebar__nav {
   display: grid;
   gap: 8px;
@@ -121,6 +56,10 @@
   box-shadow: 0 12px 24px rgba(4, 15, 30, 0.18);
 }
 
+.sidebar--teacher-profile .sidebar__logout {
+  display: none;
+}
+
 @media (max-width: 960px) {
   .sidebar {
     width: 100%;
@@ -129,7 +68,24 @@
     top: 0;
     margin: 0;
   }
-  .sidebar__brand {
-    padding-inline: 0;
+}
+
+.sidebar__icon { display: none; }
+@media (max-width: 640px) {
+  .sidebar > .sidebar__logout { display: none; }
+  .sidebar {
+    width: 100%; min-width: 0; min-height: 0; position: relative; top: auto; margin: 0;
+    display: contents;
   }
+  .sidebar__nav {
+    position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
+    padding: 7px 4px calc(7px + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.97); border-top: 1px solid #e2e9f3;
+    box-shadow: 0 -8px 24px rgba(18, 38, 69, .08); backdrop-filter: blur(16px);
+  }
+  .sidebar__link { display: grid; justify-items: center; gap: 2px; padding: 5px 2px; border-radius: 12px; font-size: .66rem; line-height: 1.2; color: #687894; }
+  .sidebar__link:hover, .sidebar__link--active { color: #174b91; background: #edf4ff; border-color: transparent; box-shadow: none; }
+  .sidebar__icon { display: block; width: 22px; height: 22px; line-height: 1; }
+  .sidebar__icon svg { display: block; width: 22px; height: 22px; }
 }

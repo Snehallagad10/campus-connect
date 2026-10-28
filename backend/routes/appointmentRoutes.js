@@ -82,7 +82,7 @@ router.post("/book", async (req, res) => {
 
 router.get("/all", async (req, res) => {
   try {
-    const { teacherName, studentName, teacherId, studentId } = req.query;
+    const { teacherName, studentName, teacherId, studentId, includeAll } = req.query;
     const filter = {};
 
     if (teacherName) {
@@ -105,16 +105,17 @@ router.get("/all", async (req, res) => {
       createdAt: -1,
     });
 
+    if (includeAll === "true") {
+      // Teacher History uses appointment IDs to pair each request with its own
+      // marks record. Preserve distinct records even when their text fields match.
+      return res.json(appointments);
+    }
+
     const latestAppointments = [];
     const seenAppointments = new Set();
-
     for (const appointment of appointments) {
       const appointmentKey = buildAppointmentKey(appointment);
-
-      if (seenAppointments.has(appointmentKey)) {
-        continue;
-      }
-
+      if (seenAppointments.has(appointmentKey)) continue;
       seenAppointments.add(appointmentKey);
       latestAppointments.push(appointment);
     }

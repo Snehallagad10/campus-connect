@@ -94,20 +94,61 @@
 
 
 const express = require("express");
+const mongoose = require("mongoose");
 const Marks = require("../models/Marks");
 const Appointment = require("../models/Appointment");
-const { readCollection } = require("../fileDb");
-const {
-  buildMarksPivot,
-  createMarksReportWorkbook,
-} = require("../services/marksExportService");
+const Teacher = require("../models/Teacher");
+const { createMarksReportWorkbook } = require("../services/marksExportService");
 
-// ✅ ADDED: Excel dependencies
-const XLSX = require("xlsx");
-const path = require("path");
-const fs = require("fs");
 
 const router = express.Router();
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function createHttpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+async function getTeacherScopedMarks(teacherId, studentName = "") {
+  if (!teacherId || !mongoose.Types.ObjectId.isValid(teacherId)) {
+    throw createHttpError(400, "A valid teacher ID is required to query marks.");
+  }
+
+  const teacher = await Teacher.findById(teacherId).select("_id name subject").lean();
+  if (!teacher) {
+    throw createHttpError(404, "Teacher not found.");
+  }
+
+  // Subject belongs to the teacher record. The appointment's teacherId is the
+  // reliable relationship between a marks record and its assigned subject.
+  if (!String(teacher.subject || "").trim()) {
+    return [];
+  }
+
+  const appointments = await Appointment.find({ teacherId: teacher._id })
+    .select("_id")
+    .lean();
+  const appointmentIds = appointments.map(({ _id }) => _id);
+
+  if (!appointmentIds.length) {
+    return [];
+  }
+
+  const filter = { appointmentId: { $in: appointmentIds } };
+  const normalizedStudentName = String(studentName || "").trim();
+  if (normalizedStudentName) {
+    filter.studentName = new RegExp(escapeRegex(normalizedStudentName), "i");
+  }
+
+  const records = await Marks.find(filter).sort({ checkedDate: -1 }).lean();
+  return records.map((record) => ({
+    ...record,
+    teacherName: teacher.name,
+    subject: teacher.subject,
+  }));
+}
 
 router.post("/save", async (req, res) => {
   try {
@@ -158,38 +199,6 @@ router.post("/save", async (req, res) => {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    // ================== ✅ ADDED EXCEL LOGIC ==================
-    try {
-      const filePath = path.join(__dirname, "../marks.xlsx");
-
-      let existingData = [];
-
-      if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const sheetName = workbook.SheetNames[0];
-        existingData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-      }
-
-      existingData.push({
-        studentName,
-        classDiv,
-        reason,
-        remarks: remarks || "",
-        grade: grade || "-",
-        feedback: feedback || "",
-        checkedDate: new Date().toLocaleString(),
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(existingData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Marks");
-
-      XLSX.writeFile(workbook, filePath);
-    } catch (excelError) {
-      console.error("Excel write error:", excelError.message);
-    }
-    // ================== ✅ END ==================
-
     res.status(201).json({
       ...marks.toObject(),
       appointment,
@@ -200,32 +209,21 @@ router.post("/save", async (req, res) => {
   }
 });
 
-async function exportMarksReport(_req, res) {
+async function exportMarksReport(req, res) {
   try {
-    let records = await Marks.find({}).sort({ checkedDate: 1 }).lean();
-    let pivot = buildMarksPivot(records);
+    const { teacherId, studentName } = req.query;
+    const records = await getTeacherScopedMarks(teacherId, studentName);
 
-    if (!pivot.columns.length) {
-      const fallbackRecords = readCollection("marks").sort(
-        (a, b) => new Date(a.checkedDate) - new Date(b.checkedDate)
-      );
-      const fallbackPivot = buildMarksPivot(fallbackRecords);
-
-      if (fallbackPivot.columns.length) {
-        records = fallbackRecords;
-        pivot = fallbackPivot;
-      }
+    if (!records.length) {
+      return res.status(404).json({ message: "No marks records found for export." });
     }
 
     const { buffer, columns, fileName, skippedRemarks } =
       await createMarksReportWorkbook(records);
 
-    console.log("Fetched records:", records.length);
-    console.log("Parsed columns:", columns);
-
     if (skippedRemarks.length) {
       console.warn(
-        `Marks export skipped ${skippedRemarks.length} record(s) with unparseable remarks.`
+        `Marks summary omitted ${skippedRemarks.length} record(s) with unparseable remarks; they remain in Report Details.`
       );
     }
 
@@ -236,6 +234,9 @@ async function exportMarksReport(_req, res) {
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     res.end(Buffer.from(buffer));
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ message: error.message });
+    }
     console.error("Marks export failed:", error);
     res.status(500).json({ message: "Unable to export marks report." });
   }
@@ -259,14 +260,13 @@ router.get("/:studentName", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const { studentName } = req.query;
-    const filter = studentName
-      ? { studentName: new RegExp(studentName, "i") }
-      : {};
-
-    const records = await Marks.find(filter).sort({ checkedDate: -1 });
+    const { teacherId, studentName } = req.query;
+    const records = await getTeacherScopedMarks(teacherId, studentName);
     res.json(records);
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ message: error.message });
+    }
     res.status(500).json({ message: error.message });
   }
 });

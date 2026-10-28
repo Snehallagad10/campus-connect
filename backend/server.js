@@ -1,49 +1,3 @@
-// const express = require("express");
-// const cors = require("cors");
-// const connectDB = require("./db");
-
-// const teacherRoutes = require("./routes/teacherRoutes");
-// const studentRoutes = require("./routes/studentRoutes");
-// const appointmentRoutes = require("./routes/appointmentRoutes");
-// const marksRoutes = require("./routes/marksRoutes");
-
-// const app = express();
-// const PORT = process.env.PORT || 5000;
-
-// connectDB();
-
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
-// app.use(express.json());
-
-// app.get("/", (_req, res) => {
-//   res.json({
-//     message: "Teacher Slot Booking & Marks Management API",
-//     status: "running",
-//   });
-// });
-
-// app.use("/teacher", teacherRoutes);
-// app.use("/student", studentRoutes);
-// app.use("/appointment", appointmentRoutes);
-// app.use("/marks", marksRoutes);
-
-// app.use((error, _req, res, _next) => {
-//   console.error(error);
-//   res.status(500).json({
-//     message: "Something went wrong on the server.",
-//   });
-// });
-
-// app.listen(PORT, () => {
-//   console.log(`Server running on http://localhost:${PORT}`);
-// });
-
-
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./db");
@@ -148,6 +102,7 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });

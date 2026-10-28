@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:2000",
-});
+export const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+const api = axios.create({ baseURL: apiBaseURL });
 
 const STORAGE_KEY = "tsbms_session";
 
@@ -39,15 +39,16 @@ export const appointmentApi = {
 
 export const marksApi = {
   save: (payload) => api.post("/marks/save", payload),
-  exportMarks: () =>
+  exportMarks: (teacherId, studentName = "") =>
     api.get("/marks/export/excel", {
+      params: { teacherId, studentName: studentName || undefined },
       responseType: "blob",
     }),
   getByStudentName: (studentName) =>
     api.get(`/marks/${encodeURIComponent(studentName)}`),
-  search: (studentName) =>
+  search: (studentName, teacherId) =>
     api.get("/marks", {
-      params: studentName ? { studentName } : {},
+      params: { teacherId, studentName: studentName || undefined },
     }),
 };
 

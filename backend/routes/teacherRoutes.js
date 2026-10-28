@@ -17,7 +17,10 @@ const sanitizeTeacher = (teacher) => ({
   startTime: teacher.startTime,
   endTime: teacher.endTime,
   labNo: teacher.labNo,
+  updatedAt: teacher.updatedAt,
 });
+
+const isValidTime = (value) => /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value || "").trim());
 
 router.post("/register", async (req, res) => {
   try {
@@ -75,6 +78,12 @@ router.put("/availability/:teacherId", async (req, res) => {
   try {
     const { teacherId } = req.params;
     const { isAvailable, startTime, endTime, labNo, email } = req.body;
+
+    if (isAvailable && (!isValidTime(startTime) || !isValidTime(endTime) || startTime === endTime)) {
+      return res.status(400).json({
+        message: "A valid From and To time are required. They must differ; overnight slots are supported.",
+      });
+    }
 
     let teacher = null;
     const update = {

@@ -1,7 +1,7 @@
 import { session } from "../api/api";
 import { formatTimeRange } from "../utils/istTime";
 
-function TeacherProfile() {
+function TeacherProfile({ onLogout }) {
   const teacher = session.get()?.user;
   const teacherName = teacher?.name || "Teacher";
   const initials = teacherName
@@ -82,6 +82,11 @@ function TeacherProfile() {
               <span>{teacher?.isAvailable ? "Live Now" : "Offline"}</span>
             </div>
           </aside>
+        </div>
+        <div className="profile-logout-row">
+          <button type="button" className="button-secondary profile-logout" onClick={onLogout}>
+            Logout
+          </button>
         </div>
       </section>
     </div>

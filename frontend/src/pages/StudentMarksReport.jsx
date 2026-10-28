@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiBaseURL, marksApi, session } from "../api/api";
+import { marksApi, session } from "../api/api";
 import "./StudentMarksReport.css";
 
 function StudentMarksReport() {
@@ -69,34 +69,37 @@ function StudentMarksReport() {
         throw new Error(failureMessage);
       }
 
-      const file = new File([blob], "Marks_Report.xlsx", { type: contentType });
+      const fileName = "Marks_Report.xlsx";
       const nativeDownload = window.CampusConnectDownloads;
-      if (nativeDownload?.startDownload) {
-        const exportUrl = new URL(`${apiBaseURL}/marks/export/excel`, window.location.origin);
-        exportUrl.searchParams.set("teacherId", teacherId);
-        if (activeSearch) exportUrl.searchParams.set("studentName", activeSearch);
-
-        const queued = nativeDownload.startDownload(
-          exportUrl.toString(),
-          file.name,
-          file.type,
-        );
-        if (!queued) throw new Error("Android could not start the Excel download.");
-        setMessage("Excel download queued. Check the download notification for progress and completion.");
-      } else if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-        await navigator.share({ files: [file], title: "Marks Report" });
-        setMessage("Choose Files or Downloads in the share sheet to save Marks_Report.xlsx.");
+      if (nativeDownload?.saveBase64File) {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Could not read the Excel report for saving."));
+          reader.readAsDataURL(blob);
+        });
+        const base64 = String(dataUrl).split(",", 2)[1];
+        if (!base64) throw new Error("Could not prepare the Excel report for saving.");
+        const saved = nativeDownload.saveBase64File(base64, fileName, contentType);
+        if (!saved) throw new Error("Android could not save the Excel report. Check available storage and try again.");
+        setMessage("Marks_Report.xlsx saved to your Downloads folder.");
       } else {
-        const downloadUrl = window.URL.createObjectURL(file);
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.download = file.name;
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 60_000);
-        setMessage("Download requested. If it does not appear, open this page in your browser or save the file from the share sheet.");
+        const file = new File([blob], fileName, { type: contentType });
+        if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+          await navigator.share({ files: [file], title: "Marks Report" });
+          setMessage("Choose Files or Downloads in the share sheet to save Marks_Report.xlsx.");
+        } else {
+          const downloadUrl = window.URL.createObjectURL(file);
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = file.name;
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 60_000);
+          setMessage("Download requested. If it does not appear, open this page in your browser or save the file from the share sheet.");
+        }
       }
     } catch (apiError) {
       if (apiError.name === "AbortError") {

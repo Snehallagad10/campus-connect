@@ -20,6 +20,14 @@ router.post("/register", async (req, res) => {
   try {
     const { fullName, email, password, year, division } = req.body;
 
+    if (![fullName, email, year, division].every((value) => typeof value === "string" && value.trim()) ||
+        typeof password !== "string" || password.length === 0) {
+      return res.status(400).json({ message: "Complete all required student fields." });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ message: "Enter a valid email address." });
+    }
+
     const existingStudent = await Student.findOne({ email });
     if (existingStudent) {
       return res.status(409).json({ message: "Student already registered." });
@@ -38,11 +46,17 @@ router.post("/register", async (req, res) => {
       student: sanitizeStudent(student),
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Student already registered." });
+    }
     const databaseUnavailable = isDatabaseUnavailable(error);
-    res.status(databaseUnavailable ? 503 : 400).json({
+    if (!databaseUnavailable) {
+      console.error("Student registration failed:", { name: error.name, code: error.code });
+    }
+    res.status(databaseUnavailable ? 503 : 500).json({
       message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
-        : error.message,
+        : "Student registration could not be completed. Please try again.",
     });
   }
 });
@@ -62,10 +76,13 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     const databaseUnavailable = isDatabaseUnavailable(error);
+    if (!databaseUnavailable) {
+      console.error("Student login failed:", { name: error.name, code: error.code });
+    }
     res.status(databaseUnavailable ? 503 : 500).json({
       message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
-        : error.message,
+        : "Student login could not be completed. Please try again.",
     });
   }
 });

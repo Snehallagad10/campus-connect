@@ -27,6 +27,14 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password, subject } = req.body;
 
+    if (![name, email, subject].every((value) => typeof value === "string" && value.trim()) ||
+        typeof password !== "string" || password.length === 0) {
+      return res.status(400).json({ message: "Complete all required teacher fields." });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ message: "Enter a valid email address." });
+    }
+
     const existingTeacher = await Teacher.findOne({ email });
     if (existingTeacher) {
       return res.status(409).json({ message: "Teacher already registered." });
@@ -44,11 +52,17 @@ router.post("/register", async (req, res) => {
       teacher: sanitizeTeacher(teacher),
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Teacher already registered." });
+    }
     const databaseUnavailable = isDatabaseUnavailable(error);
-    res.status(databaseUnavailable ? 503 : 400).json({
+    if (!databaseUnavailable) {
+      console.error("Teacher registration failed:", { name: error.name, code: error.code });
+    }
+    res.status(databaseUnavailable ? 503 : 500).json({
       message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
-        : error.message,
+        : "Teacher registration could not be completed. Please try again.",
     });
   }
 });
@@ -68,10 +82,13 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     const databaseUnavailable = isDatabaseUnavailable(error);
+    if (!databaseUnavailable) {
+      console.error("Teacher login failed:", { name: error.name, code: error.code });
+    }
     res.status(databaseUnavailable ? 503 : 500).json({
       message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
-        : error.message,
+        : "Teacher login could not be completed. Please try again.",
     });
   }
 });

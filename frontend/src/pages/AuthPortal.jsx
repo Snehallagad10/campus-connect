@@ -3,6 +3,29 @@ import { Link, useNavigate } from "react-router-dom";
 import { session, studentApi, teacherApi } from "../api/api";
 import "./AuthPortal.css";
 
+const getAuthErrorMessage = (error, role, isLogin) => {
+  const status = error.response?.status;
+  const action = isLogin ? "sign in" : "register";
+
+  if (status === 400) {
+    return error.response?.data?.message || "Check the required fields and try again.";
+  }
+  if (status === 401) return "The email or password is incorrect.";
+  if (status === 409) {
+    return `A ${role} account already exists for this email. Try signing in instead.`;
+  }
+  if (status === 503) {
+    return `${isLogin ? "Sign-in" : "Registration"} services are temporarily unavailable. Please try again shortly.`;
+  }
+  if (status >= 500) {
+    return `Campus Connect couldn't ${action} right now. Please try again shortly.`;
+  }
+  if (!error.response) {
+    return "Campus Connect couldn't reach the server. Check your internet connection and try again.";
+  }
+  return `Campus Connect couldn't ${action}. Check your details and try again.`;
+};
+
 function AuthPortal({ mode = "login", defaultRole = "student" }) {
   const navigate = useNavigate();
   useLayoutEffect(() => {
@@ -91,7 +114,7 @@ function AuthPortal({ mode = "login", defaultRole = "student" }) {
 
       setTimeout(() => navigate(role === "student" ? "/student-login" : "/teacher-login"), 900);
     } catch (apiError) {
-      setError(apiError.response?.data?.message || "Something went wrong.");
+      setError(getAuthErrorMessage(apiError, role, isLogin));
     } finally {
       setLoading(false);
     }

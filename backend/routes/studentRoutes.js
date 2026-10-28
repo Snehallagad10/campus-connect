@@ -38,8 +38,9 @@ router.post("/register", async (req, res) => {
       student: sanitizeStudent(student),
     });
   } catch (error) {
-    res.status(isDatabaseUnavailable(error) ? 503 : 400).json({
-      message: isDatabaseUnavailable(error)
+    const databaseUnavailable = isDatabaseUnavailable(error);
+    res.status(databaseUnavailable ? 503 : 400).json({
+      message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
         : error.message,
     });
@@ -60,8 +61,9 @@ router.post("/login", async (req, res) => {
       student: sanitizeStudent(student),
     });
   } catch (error) {
-    res.status(isDatabaseUnavailable(error) ? 503 : 500).json({
-      message: isDatabaseUnavailable(error)
+    const databaseUnavailable = isDatabaseUnavailable(error);
+    res.status(databaseUnavailable ? 503 : 500).json({
+      message: databaseUnavailable
         ? "Database is temporarily unavailable. Please try again shortly."
         : error.message,
     });

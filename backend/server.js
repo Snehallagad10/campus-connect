@@ -49,8 +49,6 @@ const corsOptions = {
   preflightContinue: false,
 };
 
-connectDB();
-
 // cors() responds to OPTIONS preflight requests before they reach the API routes.
 app.use(cors(corsOptions));
 

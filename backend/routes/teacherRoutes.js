@@ -1,6 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
 const Teacher = require("../models/Teacher");
+const { isDatabaseUnavailable } = require("../db");
 const { normalizeTimeInput } = require("../utils/istTime");
 
 const router = express.Router();
@@ -43,7 +44,12 @@ router.post("/register", async (req, res) => {
       teacher: sanitizeTeacher(teacher),
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    const databaseUnavailable = isDatabaseUnavailable(error);
+    res.status(databaseUnavailable ? 503 : 400).json({
+      message: databaseUnavailable
+        ? "Database is temporarily unavailable. Please try again shortly."
+        : error.message,
+    });
   }
 });
 
@@ -61,7 +67,12 @@ router.post("/login", async (req, res) => {
       teacher: sanitizeTeacher(teacher),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const databaseUnavailable = isDatabaseUnavailable(error);
+    res.status(databaseUnavailable ? 503 : 500).json({
+      message: databaseUnavailable
+        ? "Database is temporarily unavailable. Please try again shortly."
+        : error.message,
+    });
   }
 });
 

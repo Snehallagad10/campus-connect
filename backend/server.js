@@ -44,7 +44,9 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 204,
+  preflightContinue: false,
 };
 
 connectDB();

@@ -15,6 +15,9 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const PRODUCTION_FRONTEND_ORIGIN =
+  "https://campus-connect-gamma-taupe.vercel.app";
+const PREVIEW_FRONTEND_HOST = /^campus-connect(?:-[a-z0-9-]+)?\.vercel\.app$/i;
 
 const allowedFrontendOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
@@ -22,26 +25,32 @@ const allowedFrontendOrigins = (process.env.FRONTEND_URL || "")
   .filter(Boolean);
 
 const isAllowedOrigin = (origin) => {
-  if (allowedFrontendOrigins.includes(origin)) return true;
+  if (origin === PRODUCTION_FRONTEND_ORIGIN || allowedFrontendOrigins.includes(origin)) {
+    return true;
+  }
+
   try {
     const url = new URL(origin);
-    return url.protocol === "https:" && url.hostname.endsWith(".vercel.app");
+    return url.protocol === "https:" && PREVIEW_FRONTEND_HOST.test(url.hostname);
   } catch {
     return false;
   }
 };
 
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    callback(null, isAllowedOrigin(origin));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  optionsSuccessStatus: 204,
+};
+
 connectDB();
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      callback(null, isAllowedOrigin(origin));
-    },
-    credentials: true,
-  })
-);
+// cors() responds to OPTIONS preflight requests before they reach the API routes.
+app.use(cors(corsOptions));
 
 app.use(express.json());
 

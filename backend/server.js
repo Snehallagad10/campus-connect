@@ -63,6 +63,17 @@ app.get("/", (_req, res) => {
   });
 });
 
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (_error) {
+    res.status(503).json({
+      message: "Database is temporarily unavailable. Please try again shortly.",
+    });
+  }
+});
+
 app.get("/export-marks", async (_req, res) => {
   try {
     let records = await Marks.find({}).sort({ checkedDate: 1 }).lean();

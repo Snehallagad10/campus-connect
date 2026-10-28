@@ -35,20 +35,67 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/teacher-slot-booking";
+let connectionPromise = null;
+
+const safeErrorMessage = (error) =>
+  String(error?.message || error).replace(
+    /(mongodb(?:\+srv)?:\/\/)[^\s/@]+@/gi,
+    "$1[REDACTED]@"
+  );
+
+const isDatabaseUnavailable = (error) => {
+  const networkFailure =
+    /buffering timed out|server selection timed out|MongoNetwork|ECONNRESET|ECONNREFUSED|ENOTFOUND/i.test(
+      `${error?.name || ""} ${error?.message || ""}`
+    );
+
+  return mongoose.connection.readyState !== 1 || networkFailure;
+};
 
 async function connectDB() {
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log("MongoDB connected");
-  } catch (error) {
+  const mongoUri = process.env.MONGO_URI?.trim();
+  if (!mongoUri) {
+    const error = new Error("MONGO_URI is not configured.");
     console.error("MongoDB connection failed:", error.message);
-    console.error(
-      "Set MONGO_URI in backend/.env for MongoDB Atlas, or install and start local MongoDB on mongodb://127.0.0.1:27017."
-    );
-    process.exit(1);
+    throw error;
   }
+
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (connectionPromise) return connectionPromise;
+
+  const attempt = mongoose
+    .connect(mongoUri, { serverSelectionTimeoutMS: 10000 })
+    .then(() => {
+      console.info("MongoDB connected successfully.");
+      return mongoose.connection;
+    })
+    .catch((error) => {
+      console.error("MongoDB connection failed:", {
+        name: error.name,
+        code: error.code,
+        message: safeErrorMessage(error),
+      });
+      throw error;
+    })
+    .finally(() => {
+      if (connectionPromise === attempt) connectionPromise = null;
+    });
+
+  connectionPromise = attempt;
+  return attempt;
 }
 
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB connection disconnected.");
+});
+
+mongoose.connection.on("error", (error) => {
+  console.error("MongoDB connection error:", {
+    name: error.name,
+    code: error.code,
+    message: safeErrorMessage(error),
+  });
+});
+
 module.exports = connectDB;
+module.exports.isDatabaseUnavailable = isDatabaseUnavailable;

@@ -37,6 +37,12 @@ export const appointmentApi = {
   getAll: (params) => api.get("/appointment/all", { params }),
 };
 
+export const notificationApi = {
+  getAll: (recipientId, role) => api.get("/notifications", { params: { recipientId, role } }),
+  markRead: (notificationId, recipientId, role) =>
+    api.patch(`/notifications/${notificationId}/read`, { recipientId, role }),
+};
+
 export const marksApi = {
   save: (payload) => api.post("/marks/save", payload),
   exportMarks: (teacherId, studentName = "") =>

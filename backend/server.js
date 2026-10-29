@@ -6,6 +6,7 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const marksRoutes = require("./routes/marksRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const Marks = require("./models/Marks");
 const { readCollection } = require("./fileDb");
 const {
@@ -120,6 +121,7 @@ app.use("/teacher", teacherRoutes);
 app.use("/student", studentRoutes);
 app.use("/appointment", appointmentRoutes);
 app.use("/marks", marksRoutes);
+app.use("/notifications", notificationRoutes);
 
 app.use((error, _req, res, _next) => {
   console.error(error);

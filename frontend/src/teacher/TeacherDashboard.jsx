@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { appointmentApi, session, teacherApi } from "../api/api";
 import { formatCurrentIstTime, isValidAvailabilitySlot, normalizeTimeInput } from "../utils/istTime";
 import TimePicker from "../components/TimePicker";
+import NotificationBell from "../components/NotificationBell";
 
 function TeacherDashboard() {
   const navigate = useNavigate();
@@ -62,7 +63,35 @@ function TeacherDashboard() {
     if (type === "checkbox") {
       if (newValue) {
         setError("");
-        setMessage("Enter the time slot and save to make your availability live.");
+        if (!isValidAvailabilitySlot(availabilityForm.startTime, availabilityForm.endTime)) {
+          setMessage("Enter the time slot and save to make your availability live.");
+          return;
+        }
+
+        setSaving(true);
+        setMessage("");
+        try {
+          const { data } = await teacherApi.updateAvailability(teacherId || "lookup", {
+            ...availabilityForm,
+            isAvailable: true,
+            startTime: normalizeTimeInput(availabilityForm.startTime),
+            endTime: normalizeTimeInput(availabilityForm.endTime),
+            email: teacher?.email || "",
+          });
+          session.set({ role: "teacher", user: data.teacher });
+          setAvailabilityForm({
+            isAvailable: data.teacher.isAvailable,
+            startTime: normalizeTimeInput(data.teacher.startTime),
+            endTime: normalizeTimeInput(data.teacher.endTime),
+            labNo: data.teacher.labNo,
+          });
+          setMessage(data.message);
+        } catch (apiError) {
+          setAvailabilityForm((previous) => ({ ...previous, isAvailable: false }));
+          setError(apiError.response?.data?.message || "Unable to save availability.");
+        } finally {
+          setSaving(false);
+        }
         return;
       }
 
@@ -134,6 +163,7 @@ function TeacherDashboard() {
           <h1>Teacher Dashboard</h1>
           <p>Manage live slot booking, pending student requests, and marks workflow.</p>
         </div>
+        <NotificationBell userId={teacherId} role="teacher" />
       </div>
 
       <div className="dashboard-grid teacher-dashboard-grid">
@@ -160,6 +190,7 @@ function TeacherDashboard() {
                   name="isAvailable"
                   checked={availabilityForm.isAvailable}
                   onChange={handleAvailabilityChange}
+                  disabled={saving}
                 />
                 <span className="toggle-slider" />
               </span>

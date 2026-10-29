@@ -98,6 +98,7 @@ const mongoose = require("mongoose");
 const Marks = require("../models/Marks");
 const Appointment = require("../models/Appointment");
 const Teacher = require("../models/Teacher");
+const Notification = require("../models/Notification");
 const { createMarksReportWorkbook } = require("../services/marksExportService");
 
 
@@ -166,6 +167,11 @@ router.post("/save", async (req, res) => {
       return res.status(400).json({ message: "Appointment ID is required to update status." });
     }
 
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found." });
+    }
+
     const marks = await Marks.findOneAndUpdate(
       { appointmentId },
       {
@@ -185,18 +191,16 @@ router.post("/save", async (req, res) => {
       }
     );
 
-    const appointment = await Appointment.findByIdAndUpdate(
-      appointmentId,
-      {
-        status: "Completed",
-      },
-      {
-        new: true,
-      }
-    );
-
-    if (!appointment) {
-      return res.status(404).json({ message: "Appointment not found." });
+    appointment.status = "Completed";
+    await appointment.save();
+    if (appointment.studentId) {
+      await Notification.create({
+        recipientId: appointment.studentId,
+        recipientRole: "student",
+        type: "appointment_completed",
+        relatedId: appointment._id,
+        message: `Your ${appointment.reason} request with ${appointment.teacherName} has been completed.`,
+      });
     }
 
     res.status(201).json({

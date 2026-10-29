@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { appointmentApi, session, teacherApi } from "../api/api";
+import NotificationBell from "../components/NotificationBell";
 import {
   formatCurrentIstTime,
-  formatAvailabilityNotification,
   formatLabNumber,
   isTeacherAvailableNow,
   isValidAvailabilitySlot,
@@ -13,10 +13,7 @@ import "./StudentDashboard.css";
 function StudentDashboard() {
   const student = session.get()?.user;
   const studentId = student?.id || student?._id || "";
-  const notificationStorageKey = `campus-connect-availability-${studentId || student?.email || "student"}`;
-  const seenEventsStorageKey = `${notificationStorageKey}-seen-events`;
   const [teachers, setTeachers] = useState([]);
-  const [appointments, setAppointments] = useState([]);
   const [form, setForm] = useState({
     teacherId: "",
     reason: "assignment",
@@ -25,124 +22,12 @@ function StudentDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [booking, setBooking] = useState(false);
-  const [availabilityNotifications, setAvailabilityNotifications] = useState(() => {
-    try {
-      const savedNotifications = localStorage.getItem(notificationStorageKey);
-      const parsedNotifications = savedNotifications ? JSON.parse(savedNotifications) : [];
-      return Array.isArray(parsedNotifications) ? parsedNotifications : [];
-    } catch (_storageError) {
-      return [];
-    }
-  });
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [toastNotification, setToastNotification] = useState(null);
-  const previousAvailabilityRef = useRef(null);
-  const toastTimerRef = useRef(null);
-  const notificationPanelTimerRef = useRef(null);
-  const seenAvailabilityEventsRef = useRef((() => {
-    try {
-      const savedEvents = JSON.parse(localStorage.getItem(seenEventsStorageKey) || "[]");
-      return new Set(Array.isArray(savedEvents) ? savedEvents : []);
-    } catch (_storageError) {
-      return new Set();
-    }
-  })());
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(notificationStorageKey, JSON.stringify(availabilityNotifications));
-    } catch (_storageError) {
-      // Keep notifications available for this page session if storage is unavailable.
-    }
-  }, [availabilityNotifications, notificationStorageKey]);
-
-  useEffect(() => () => {
-    window.clearTimeout(toastTimerRef.current);
-    window.clearTimeout(notificationPanelTimerRef.current);
-  }, []);
-
-  useEffect(() => {
-    if (!notificationsOpen) return undefined;
-    notificationPanelTimerRef.current = window.setTimeout(() => {
-      setNotificationsOpen(false);
-    }, 10_000);
-    return () => window.clearTimeout(notificationPanelTimerRef.current);
-  }, [notificationsOpen]);
-
   const loadData = async () => {
     try {
-      const [teachersResponse, appointmentsResponse] = await Promise.all([
-        teacherApi.getAll(),
-        appointmentApi.getAll(studentId ? { studentId } : { studentName: student?.fullName || "" }),
-      ]);
+      const teachersResponse = await teacherApi.getAll();
       const nextTeachers = teachersResponse.data;
-      const previousAvailability = previousAvailabilityRef.current;
-      const currentTime = formatCurrentIstTime();
-
-      setAvailabilityNotifications((previous) => previous.map((notification) => {
-        if (notification.message) return notification;
-        const teacher = nextTeachers.find((item) =>
-          notification.id?.startsWith(`${item.id || item._id}-`) || item.name === notification.teacherName
-        );
-        if (!teacher) return notification;
-        return {
-          ...notification,
-          teacherId: teacher.id || teacher._id,
-          teacherName: teacher.name,
-          startTime: teacher.startTime,
-          endTime: teacher.endTime,
-          labNo: teacher.labNo,
-          message: formatAvailabilityNotification(teacher),
-        };
-      }));
-
-      if (previousAvailability) {
-        const newlyAvailable = nextTeachers.filter((teacher) => {
-          const teacherId = teacher.id || teacher._id;
-          return isTeacherAvailableNow(teacher, currentTime) && previousAvailability.get(teacherId) === false;
-        });
-
-        if (newlyAvailable.length) {
-          const newNotifications = newlyAvailable.flatMap((teacher) => {
-            const teacherId = teacher.id || teacher._id;
-            // updatedAt is changed by MongoDB whenever availability is saved, making
-            // the event key stable across duplicate polls and page reloads.
-            const eventId = `${teacherId}:${teacher.updatedAt || `${teacher.startTime}-${teacher.endTime}-${teacher.labNo || ""}`}`;
-            if (seenAvailabilityEventsRef.current.has(eventId)) return [];
-            seenAvailabilityEventsRef.current.add(eventId);
-            return [{
-              id: eventId,
-              teacherId: teacher.id || teacher._id,
-              teacherName: teacher.name,
-              startTime: teacher.startTime,
-              endTime: teacher.endTime,
-              labNo: teacher.labNo,
-              message: formatAvailabilityNotification(teacher),
-              read: false,
-            }];
-          });
-          if (newNotifications.length) {
-            try {
-              localStorage.setItem(seenEventsStorageKey, JSON.stringify([...seenAvailabilityEventsRef.current].slice(-500)));
-            } catch (_storageError) {
-              // The in-memory event set still prevents duplicates for this page session.
-            }
-            setAvailabilityNotifications((previous) => [...newNotifications, ...previous].slice(0, 30));
-            setToastNotification(newNotifications[0]);
-            window.clearTimeout(toastTimerRef.current);
-            toastTimerRef.current = window.setTimeout(() => setToastNotification(null), 3000);
-          }
-        }
-      }
-
-      previousAvailabilityRef.current = new Map(
-        nextTeachers.map((teacher) => [
-          teacher.id || teacher._id,
-          isTeacherAvailableNow(teacher, currentTime),
-        ])
-      );
       setTeachers(nextTeachers);
-      setAppointments(appointmentsResponse.data);
+      setError("");
     } catch (apiError) {
       setError(apiError.response?.data?.message || "Unable to load dashboard data.");
     }
@@ -159,14 +44,6 @@ function StudentDashboard() {
   );
   const currentIstTime = formatCurrentIstTime();
   const selectedTeacherAvailable = isTeacherAvailableNow(selectedTeacher, currentIstTime);
-  const unreadNotificationCount = availabilityNotifications.filter((notification) => !notification.read).length;
-
-  const toggleNotifications = () => setNotificationsOpen((previous) => !previous);
-
-  const viewNotification = (notificationId) => {
-    setAvailabilityNotifications((previous) => previous.filter((notification) => notification.id !== notificationId));
-  };
-
   const handleChange = (event) => {
     setForm((previous) => ({
       ...previous,
@@ -199,71 +76,16 @@ function StudentDashboard() {
 
   return (
     <div className="page-grid">
-      {toastNotification ? (
-        <div className="student-availability-toast" role="status" aria-live="polite">
-          <span>{toastNotification.message}</span>
-          <button
-            type="button"
-            onClick={() => {
-              window.clearTimeout(toastTimerRef.current);
-              setToastNotification(null);
-            }}
-            aria-label="Dismiss availability notification"
-          >
-            &times;
-          </button>
-        </div>
-      ) : null}
-
       <div className="page-header">
         <div>
           <h1>Student Dashboard</h1>
           <p>Check live faculty slots, book appointments, and track request status.</p>
         </div>
-        <div className="student-notifications">
-          <button
-            className="student-notifications__bell"
-            type="button"
-            onClick={toggleNotifications}
-            aria-label={unreadNotificationCount ? `Notifications, ${unreadNotificationCount} unread` : "Notifications"}
-            aria-expanded={notificationsOpen}
-            aria-controls="student-notifications-panel"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-              <path d="M10 21h4" />
-            </svg>
-            {unreadNotificationCount > 0 ? (
-              <span className="student-notifications__badge" aria-hidden="true">
-                {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
-              </span>
-            ) : null}
-          </button>
-          {notificationsOpen ? (
-            <section className="student-notifications__panel" id="student-notifications-panel" aria-label="Availability notifications">
-              <h2>Notifications</h2>
-              {availabilityNotifications.length ? (
-                <ul>
-                  {availabilityNotifications.map((notification) => (
-                    <li key={notification.id}>
-                      <button
-                        className="student-notifications__item"
-                        type="button"
-                        onClick={() => viewNotification(notification.id)}
-                        aria-label={`View and dismiss: ${notification.message || `${notification.teacherName} is now available for slot booking.`}`}
-                      >
-                        <span className="student-notifications__dot" aria-hidden="true" />
-                        <span>{notification.message || `${notification.teacherName} is now available for slot booking.`}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="student-notifications__empty">No availability notifications yet.</p>
-              )}
-            </section>
-          ) : null}
-        </div>
+        <NotificationBell
+          userId={studentId}
+          role="student"
+          onAvailability={(teacherId) => setForm((previous) => ({ ...previous, teacherId }))}
+        />
       </div>
 
       <div className="dashboard-grid">

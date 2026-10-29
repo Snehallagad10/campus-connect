@@ -3,6 +3,7 @@ const Appointment = require("../models/Appointment");
 const Marks = require("../models/Marks");
 const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
+const Notification = require("../models/Notification");
 const { getCurrentIstDateTime } = require("../utils/istTime");
 
 const router = express.Router();
@@ -68,6 +69,14 @@ router.post("/book", async (req, res) => {
         teacherId: teacher._id,
       });
     }
+
+    await Notification.create({
+      recipientId: teacher._id,
+      recipientRole: "teacher",
+      type: "appointment",
+      relatedId: appointment._id,
+      message: `${student.fullName} requested an appointment for ${reason}${normalizedRemarks ? `: ${normalizedRemarks}` : ""}.`,
+    });
 
     res.status(existingAppointment ? 200 : 201).json({
       message: existingAppointment

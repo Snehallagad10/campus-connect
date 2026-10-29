@@ -1,6 +1,8 @@
 const express = require("express");
 const crypto = require("crypto");
 const Teacher = require("../models/Teacher");
+const Student = require("../models/Student");
+const Notification = require("../models/Notification");
 const { isDatabaseUnavailable } = require("../db");
 const { normalizeTimeInput } = require("../utils/istTime");
 
@@ -113,7 +115,12 @@ router.put("/availability/:teacherId", async (req, res) => {
       });
     }
 
+    if (typeof isAvailable !== "boolean") {
+      return res.status(400).json({ message: "Availability must be true or false." });
+    }
+
     let teacher = null;
+    let previousTeacher = null;
     const update = {
       isAvailable,
       startTime: normalizeTimeInput(startTime),
@@ -122,6 +129,7 @@ router.put("/availability/:teacherId", async (req, res) => {
     };
 
     if (teacherId && teacherId !== "lookup") {
+      previousTeacher = await Teacher.findById(teacherId).lean();
       teacher = await Teacher.findByIdAndUpdate(teacherId, update, {
         new: true,
         runValidators: true,
@@ -129,6 +137,7 @@ router.put("/availability/:teacherId", async (req, res) => {
     }
 
     if (!teacher && email) {
+      previousTeacher = await Teacher.findOne({ email }).lean();
       teacher = await Teacher.findOneAndUpdate({ email }, update, {
         new: true,
         runValidators: true,
@@ -137,6 +146,29 @@ router.put("/availability/:teacherId", async (req, res) => {
 
     if (!teacher) {
       return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    // The durable teacher record remains the source of truth; this record is
+    // the cross-device history of availability changes.
+    const availabilityChanged = !previousTeacher || (
+      previousTeacher.isAvailable !== teacher.isAvailable ||
+      previousTeacher.startTime !== teacher.startTime ||
+      previousTeacher.endTime !== teacher.endTime ||
+      previousTeacher.labNo !== teacher.labNo
+    );
+    if (availabilityChanged) {
+      const students = await Student.find({}, "_id").lean();
+      if (students.length) {
+        await Notification.insertMany(students.map(({ _id }) => ({
+          recipientId: _id,
+          recipientRole: "student",
+          type: "availability",
+          teacherId: teacher._id,
+          message: teacher.isAvailable
+            ? `${teacher.name} is available from ${teacher.startTime} to ${teacher.endTime}${teacher.labNo ? ` in Lab ${teacher.labNo}` : ""}.`
+            : `${teacher.name} is now unavailable for booking.`,
+        })));
+      }
     }
 
     res.json({

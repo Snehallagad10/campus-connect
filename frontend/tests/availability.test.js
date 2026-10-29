@@ -1,19 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isTeacherAvailableNow } from "../src/utils/istTime.js";
+import { getTeacherAvailabilityStatus, isTeacherAvailableNow } from "../src/utils/istTime.js";
 
-test("availability is true while the enabled slot is active", () => {
-  assert.equal(isTeacherAvailableNow({ isAvailable: true, startTime: "09:00", endTime: "10:00" }, "09:30"), true);
+const slot = { isAvailable: true, startTime: "16:00", endTime: "18:00" };
+
+test("disabled availability stays unavailable", () => {
+  assert.equal(getTeacherAvailabilityStatus({ ...slot, isAvailable: false }, "17:00"), "Unavailable");
 });
 
-test("availability is false outside the configured slot or when disabled", () => {
-  assert.equal(isTeacherAvailableNow({ isAvailable: true, startTime: "09:00", endTime: "10:00" }, "10:00"), false);
-  assert.equal(isTeacherAvailableNow({ isAvailable: false, startTime: "09:00", endTime: "10:00" }, "09:30"), false);
+test("enabled future slots are scheduled, not unavailable", () => {
+  assert.equal(getTeacherAvailabilityStatus(slot, "11:01"), "Scheduled");
 });
 
-test("availability supports overnight slots", () => {
-  const slot = { isAvailable: true, startTime: "23:00", endTime: "01:00" };
-  assert.equal(isTeacherAvailableNow(slot, "23:30"), true);
-  assert.equal(isTeacherAvailableNow(slot, "00:30"), true);
-  assert.equal(isTeacherAvailableNow(slot, "12:00"), false);
+test("active slots are available now", () => {
+  assert.equal(getTeacherAvailabilityStatus(slot, "17:00"), "Available now");
+  assert.equal(isTeacherAvailableNow(slot, "17:00"), true);
+});
+
+test("ended same-day slots report that they have ended", () => {
+  assert.equal(getTeacherAvailabilityStatus(slot, "18:00"), "Slot ended");
+});
+
+test("overnight slots remain active across midnight and schedule during the gap", () => {
+  const overnight = { isAvailable: true, startTime: "23:00", endTime: "01:00" };
+  assert.equal(getTeacherAvailabilityStatus(overnight, "23:30"), "Available now");
+  assert.equal(getTeacherAvailabilityStatus(overnight, "00:30"), "Available now");
+  assert.equal(getTeacherAvailabilityStatus(overnight, "12:00"), "Scheduled");
+});
+
+test("invalid time ranges are reported clearly", () => {
+  assert.equal(getTeacherAvailabilityStatus({ ...slot, endTime: "16:00" }, "16:00"), "Invalid slot");
 });

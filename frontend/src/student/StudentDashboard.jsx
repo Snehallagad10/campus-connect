@@ -4,6 +4,7 @@ import NotificationBell from "../components/NotificationBell";
 import {
   formatCurrentIstTime,
   formatLabNumber,
+  getTeacherAvailabilityStatus,
   isTeacherAvailableNow,
   isValidAvailabilitySlot,
   normalizeTimeInput,
@@ -44,6 +45,9 @@ function StudentDashboard() {
   );
   const currentIstTime = formatCurrentIstTime();
   const selectedTeacherAvailable = isTeacherAvailableNow(selectedTeacher, currentIstTime);
+  const selectedTeacherStatus = getTeacherAvailabilityStatus(selectedTeacher, currentIstTime);
+  const isSelectedTeacherScheduled = selectedTeacherStatus === "Scheduled";
+  const selectedTeacherStatusPositive = selectedTeacherAvailable || isSelectedTeacherScheduled;
   const handleChange = (event) => {
     setForm((previous) => ({
       ...previous,
@@ -114,9 +118,9 @@ function StudentDashboard() {
                       padding: "4px 10px",
                       fontSize: "0.82rem",
                       fontWeight: 700,
-                      background: selectedTeacherAvailable ? "#e7f7ee" : "#f3f4f6",
-                      color: selectedTeacherAvailable ? "#117245" : "#6b7890",
-                      border: selectedTeacherAvailable ? "1px solid #b2e4cc" : "1px solid #d1d5db",
+                      background: selectedTeacherStatusPositive ? "#e7f7ee" : "#f3f4f6",
+                      color: selectedTeacherStatusPositive ? "#117245" : "#6b7890",
+                      border: selectedTeacherStatusPositive ? "1px solid #b2e4cc" : "1px solid #d1d5db",
                     }}
                   >
                     <span
@@ -124,11 +128,11 @@ function StudentDashboard() {
                         width: "7px",
                         height: "7px",
                         borderRadius: "50%",
-                        background: selectedTeacherAvailable ? "#22a96e" : "#9ca3af",
+                        background: selectedTeacherStatusPositive ? "#22a96e" : "#9ca3af",
                         flexShrink: 0,
                       }}
                     />
-                    {selectedTeacherAvailable ? "Available" : "Unavailable"}
+                    {selectedTeacherStatus}
                   </span>
                 </div>
               ) : null}
@@ -159,7 +163,7 @@ function StudentDashboard() {
               <div className="card" style={{ padding: "16px" }}>
                 <strong>{selectedTeacher.name}</strong>
                 <p style={{ marginTop: "8px", color: "#61728d" }}>
-                  {selectedTeacherAvailable ? "Available" : "Unavailable"} | From {normalizeTimeInput(selectedTeacher.startTime)} to {normalizeTimeInput(selectedTeacher.endTime)} | {formatLabNumber(selectedTeacher.labNo)}
+                  {selectedTeacherStatus} | From {normalizeTimeInput(selectedTeacher.startTime)} to {normalizeTimeInput(selectedTeacher.endTime)} | {formatLabNumber(selectedTeacher.labNo)}
                 </p>
               </div>
             ) : null}
@@ -183,7 +187,10 @@ function StudentDashboard() {
 
           <div className="list-card">
             {teachers.length ? (
-              teachers.map((teacher) => (
+              teachers.map((teacher) => {
+                const status = getTeacherAvailabilityStatus(teacher, currentIstTime);
+                const positive = status === "Available now" || status === "Scheduled";
+                return (
                 <article key={teacher.id || teacher._id} className="list-item">
                   <div>
                     <h4>{teacher.name}</h4>
@@ -193,11 +200,12 @@ function StudentDashboard() {
                         : "Slot time not set"} | {formatLabNumber(teacher.labNo)}
                     </p>
                   </div>
-                  <span className={isTeacherAvailableNow(teacher, currentIstTime) ? "status-pill status-pill--available" : "status-pill status-pill--busy"}>
-                    {isTeacherAvailableNow(teacher, currentIstTime) ? "Available" : "Unavailable"}
+                  <span className={`status-pill ${positive ? "status-pill--available" : "status-pill--busy"}`}>
+                    {status}
                   </span>
                 </article>
-              ))
+                );
+              })
             ) : (
               <div className="empty-state">No teachers registered yet.</div>
             )}

@@ -75,20 +75,27 @@ export const formatAvailabilityNotification = (teacher) => {
   return `${teacher?.name || "Teacher"} is available from ${formatTime12Hour(teacher?.startTime)} to ${formatTime12Hour(teacher?.endTime)} in ${lab}${duration ? ` (for ${duration})` : ""}.`;
 };
 
-export const isTeacherAvailableNow = (teacher, currentTime = formatCurrentIstTime()) => {
-  if (!teacher?.isAvailable || !isValidAvailabilitySlot(teacher.startTime, teacher.endTime)) {
-    return false;
-  }
-
+export const getTeacherAvailabilityStatus = (teacher, currentTime = formatCurrentIstTime()) => {
+  if (!teacher?.isAvailable) return "Unavailable";
+  if (!isValidAvailabilitySlot(teacher.startTime, teacher.endTime)) return "Invalid slot";
   const start = timeToMinutes(teacher.startTime);
   const end = timeToMinutes(teacher.endTime);
   const current = timeToMinutes(currentTime);
-  if (current === null) return false;
+  if (current === null) return "Invalid slot";
 
-  return start < end
-    ? current >= start && current < end
-    : current >= start || current < end;
+  if (start < end) {
+    if (current < start) return "Scheduled";
+    if (current < end) return "Available now";
+    return "Slot ended";
+  }
+
+  // An overnight slot is active across midnight. During its daytime gap,
+  // report the next occurrence as scheduled.
+  return current >= start || current < end ? "Available now" : "Scheduled";
 };
+
+export const isTeacherAvailableNow = (teacher, currentTime = formatCurrentIstTime()) =>
+  getTeacherAvailabilityStatus(teacher, currentTime) === "Available now";
 
 export const formatLabNumber = (labNo) => {
   const value = String(labNo || "").trim();
